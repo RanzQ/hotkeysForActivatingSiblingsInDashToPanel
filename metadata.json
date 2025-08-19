@@ -3,6 +3,11 @@
   "description": "Adds keybindings (hotkeys) for activating (and maybe eventually reordering) sibling windows in the Dash to Panel taskbar",
   "uuid": "hotkeysForActivatingSiblingsInDashToPanel@tannerlegvold.gmail.com",
   "shell-version": [
-    "42"
-  ]
+    "46",
+    "47",
+    "48"
+  ],
+  "url": "https://github.com/tannerlegvold/hotkeysForActivatingSiblingsInDashToPanel",
+  "gettext-domain": "hotkeysForActivatingSiblingsInDashToPanel@tannerlegvold.gmail.com",
+  "settings-schema": "org.gnome.shell.extensions.hotkeysForActivatingSiblingsInDashToPanel"
 }
