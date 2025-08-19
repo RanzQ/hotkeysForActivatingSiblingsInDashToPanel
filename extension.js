@@ -1,135 +1,87 @@
-
-
 // After changes you must save then reload Gnome Shell
 // Do this with Alt + F2 then r then Enter
 
-const GETTEXT_DOMAIN = 'my-indicator-extension';
+import GLib from 'gi://GLib';
+import Shell from 'gi://Shell';
+import Meta from 'gi://Meta';
 
-const { GObject, St } = imports.gi;
-const Meta = imports.gi.Meta;
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const Shell = imports.gi.Shell;
-const WindowManager = imports.ui.windowManager;
-const Mainloop = imports.mainloop;
-const Signals = imports.signals;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js'
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
+import {
+  Extension,
+  gettext as _,
+} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-// const Utils = Me.imports.utils;
+const GETTEXT_DOMAIN =
+  'hotkeysForActivatingSiblingsInDashToPanel@tannerlegvold.gmail.com';
 
-const _ = ExtensionUtils.gettext;
+// Taken from https://github.com/home-sweet-gnome/dash-to-panel/blob/v68/src/utils.js#L432
+// Changed the direction to left and right instead of up and down
+function activateSiblingWindow(windows, direction, startWindow) {
+  let windowIndex = windows.indexOf(global.display.focus_window);
+  let nextWindowIndex =
+    windowIndex < 0
+      ? startWindow
+        ? windows.indexOf(startWindow)
+        : 0
+      : windowIndex + (direction == 'left' ? -1 : 1);
 
-function getSettings() {
-  let GioSSS = Gio.SettingsSchemaSource;
-  let schemaSource = GioSSS.new_from_directory(
-    Me.dir.get_child("schemas").get_path(),
-    GioSSS.get_default(),
-    false
-  );
-  let schemaObj = schemaSource.lookup(
-    'org.gnome.shell.extensions.hotkeysForActivatingSiblingsInDashToPanel', true);
-  if (!schemaObj) {
-    throw new Error('cannot find schemas');
+  if (nextWindowIndex == windows.length) {
+    nextWindowIndex = 0;
+  } else if (nextWindowIndex < 0) {
+    nextWindowIndex = windows.length - 1;
   }
-  return new Gio.Settings({ settings_schema : schemaObj });
+
+  if (windowIndex != nextWindowIndex) {
+    Main.activateWindow(windows[nextWindowIndex]);
+  }
 }
 
-// Taken from https://github.com/home-sweet-gnome/dash-to-panel/blob/master/utils.js#L395
-// That version isn't tested, it has an obvious problem
-// I made the obvious fix and now it works
-var activateSiblingWindow = function(windows, direction, startWindow) {
-    let windowIndex = windows.indexOf(global.display.focus_window);
-    let nextWindowIndex = windowIndex < 0 ?
-                          startWindow ? windows.indexOf(startWindow) : 0 : 
-                          windowIndex + (direction == 'left' ? -1 : 1);
+function waitForDashToPanelThenEnable(timeBetweenChecks, settings) {
+  if (!global.dashToPanel) {
+    console.debug(_('%s: still waiting').format(GETTEXT_DOMAIN));
+    GLib.timeout_add(timeBetweenChecks, () =>
+      waitForDashToPanelThenEnable(timeBetweenChecks, settings)
+    );
+    return;
+  }
 
-    if (nextWindowIndex == windows.length) {
-        nextWindowIndex = 0;
-    } else if (nextWindowIndex < 0) {
-        nextWindowIndex = windows.length - 1;
-    }
-
-    if (windowIndex != nextWindowIndex) {
-        Main.activateWindow(windows[nextWindowIndex]);
-    }
-};
-
-// timeBetweenChecks should be given in milliseconds
-function waitForDashToPanelThenEnable(timeBetweenChecks){
-    if(global.dashToPanel){
-		// See this for more on keybindings https://www.youtube.com/watch?v=L6ewpCMkrRE
-		let settings = getSettings();
-      	let mode = Shell.ActionMode.ALL;
-		let flag = Meta.KeyBindingFlags.NONE;
-		Main.wm.addKeybinding("activate-left", settings, flag, mode, () => {
-		    console.log('tannerLog: activate-left');
-		    let windows = global.dashToPanel.panels[0].taskbar.getAppInfos().reduce((ws, appInfo) => ws.concat(appInfo.windows), []);
-		    activateSiblingWindow(windows, 'left');
-		});
-		Main.wm.addKeybinding("activate-right", settings, flag, mode, () => {
-		    console.log('tannerLog: activate-right');
-		    let windows = global.dashToPanel.panels[0].taskbar.getAppInfos().reduce((ws, appInfo) => ws.concat(appInfo.windows), []);
-		    activateSiblingWindow(windows, 'right');
-		});
-		// Shift based shortcuts aren't working for me. Perhaps something is already
-		// catching them on my system... if so, how to find out what
-		// Main.wm.addKeybinding("swap-left", settings, flag, mode, () => {
-		    // console.log('tannerLog: shortcut is working');
-		// });
-		// Main.wm.addKeybinding("swap-right", settings, flag, mode, () => {
-		    // console.log('tannerLog: shortcut is working');
-		// });
-    }
-    else{
-    	console.log("tannerLog: still waiting")
-        // setTimeout(waitForDashToPanel(timeBetweenChecks), timeBetweenChecks);
-        Mainloop.timeout_add(1000, () => waitForDashToPanelThenEnable(timeBetweenChecks));
-    }
+  // See this for more on keybindings https://www.youtube.com/watch?v=L6ewpCMkrRE
+  let mode = Shell.ActionMode.ALL;
+  let flag = Meta.KeyBindingFlags.NONE;
+  Main.wm.addKeybinding('activate-left', settings, flag, mode, () => {
+    console.debug(_('%s: activate-left').format(GETTEXT_DOMAIN));
+    let windows = global.dashToPanel.panels[0].taskbar
+      .getAppInfos()
+      .reduce((ws, appInfo) => ws.concat(appInfo.windows), []);
+    activateSiblingWindow(windows, 'left');
+  });
+  Main.wm.addKeybinding('activate-right', settings, flag, mode, () => {
+    console.debug(_('%s: activate-right').format(GETTEXT_DOMAIN));
+    let windows = global.dashToPanel.panels[0].taskbar
+      .getAppInfos()
+      .reduce((ws, appInfo) => ws.concat(appInfo.windows), []);
+    activateSiblingWindow(windows, 'right');
+  });
+  console.debug(_('%s: keys bound').format(GETTEXT_DOMAIN));
 }
 
+export default class HotkeysForActivatingSiblingsInDashToPanelExtension extends Extension {
+  constructor(metadata) {
+    super(metadata);
+    this.initTranslations(GETTEXT_DOMAIN);
+  }
 
-// This is how you get the currently focused window I think
-// global.display.get_focus_window()
+  enable() {
+    console.debug(_('Enabling %s').format(GETTEXT_DOMAIN));
+    this._settings = this.getSettings();
+    waitForDashToPanelThenEnable(1000, this._settings);
+  }
 
-// This is how you focus a window named myWindow
-// myWindow.activate(global.get_current_time())
-
-// This is how you get the list of windows in the same workspace as myWindow
-// myWindow.get_display().get_workspace_manager().get_active_workspace().list_window()
-
-// Note: eval(``) is very powerful
-
-class Extension {
-    constructor(uuid) {
-        console.log("tannerLogConstructor");
-    
-        this._uuid = uuid;
-
-        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
-    }
-
-    // This is run whenever the extension is enabled
-    // (eg through the desktop app)
-    enable() {
-        console.log("tannerLogEnabled");
-    	waitForDashToPanelThenEnable(50);
-    }
-
-    // This is run whenever the extension is disabled
-    disable() {
-    	Main.wm.removeKeybinding("activate-left");
-        Main.wm.removeKeybinding("activate-right");
-        // Main.wm.removeKeybinding("swap-left");
-        // Main.wm.removeKeybinding("swap-right");
-    }
-}
-
-// This is run when the extension is first enabled
-function init(meta) {
-    return new Extension(meta.uuid);
+  disable() {
+    console.debug(_('Disabling %s').format(GETTEXT_DOMAIN));
+    Main.wm.removeKeybinding('activate-left');
+    Main.wm.removeKeybinding('activate-right');
+    this._settings = null;
+  }
 }
