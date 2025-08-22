@@ -40,8 +40,10 @@ function activateSiblingWindow(windows, direction, startWindow) {
 function waitForDashToPanelThenEnable(timeBetweenChecks, settings) {
   if (!global.dashToPanel) {
     console.debug(_('%s: still waiting').format(GETTEXT_DOMAIN));
-    GLib.timeout_add(timeBetweenChecks, () =>
-      waitForDashToPanelThenEnable(timeBetweenChecks, settings)
+    GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      timeBetweenChecks,
+      () => waitForDashToPanelThenEnable(timeBetweenChecks, settings)
     );
     return;
   }
