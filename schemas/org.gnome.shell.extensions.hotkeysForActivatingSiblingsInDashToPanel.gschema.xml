@@ -3,18 +3,32 @@
   <schema id="org.gnome.shell.extensions.hotkeysForActivatingSiblingsInDashToPanel"
     path="/org/gnome/shell/extensions/hotkeysForActivatingSiblingsInDashToPanel/">
     <!-- If you make any changes to must run glib-compile-schemas schemas/ in the directory of the extension -->
-    <key type="as" name="activate-left">
-      <default><![CDATA[['<Super>Left']]]></default>
+    <key type="as" name="dash-to-panel-activate-left">
+      <default><![CDATA[['<Super><Alt>Up']]]></default>
       <summary>Keybinding to activate left window</summary>
       <description>
         Activate left window with this key.
       </description>
     </key>
-    <key type="as" name="activate-right">
-      <default><![CDATA[['<Super>Right']]]></default>
+    <key type="as" name="dash-to-panel-activate-right">
+      <default><![CDATA[['<Super><Alt>Down']]]></default>
       <summary>Keybinding to activate right window</summary>
       <description>
         Activate left window with this key.
+      </description>
+    </key>
+    <key type="as" name="dash-to-panel-activate-group-left">
+      <default><![CDATA[['<Super><Alt>Left']]]></default>
+      <summary>Keybinding to activate left window group</summary>
+      <description>
+        Activate left window group with this key.
+      </description>
+    </key>
+    <key type="as" name="dash-to-panel-activate-group-right">
+      <default><![CDATA[['<Super><Alt>Right']]]></default>
+      <summary>Keybinding to activate right window group</summary>
+      <description>
+        Activate left window group with this key.
       </description>
     </key>
   </schema>
